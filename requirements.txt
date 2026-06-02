@@ -1,0 +1,31 @@
+# =============================================
+# Diabetic Retinopathy Research Platform
+# Python Dependencies
+# =============================================
+
+# Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+
+# ML & Data Science
+scikit-learn
+pandas
+numpy
+
+# Visualization
+matplotlib
+seaborn
+
+# Image Processing
+Pillow
+opencv-python
+
+# Explainability
+grad-cam
+
+# Web Backend
+flask
+flask-cors
+
+# Utilities
+tqdm

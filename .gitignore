@@ -1,0 +1,69 @@
+# =============================================
+# Diabetic Retinopathy Research Platform
+# =============================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+*.so
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Dataset (large image files — not tracked)
+Dataset/
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Logs & temp files
+*.log
+temp/
+tmp/
+
+# Node / Frontend build artifacts
+node_modules/
+.next/
+out/
+frontend/.next/
+frontend/node_modules/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Misc
+*.bak
+*.tmp
+*.cache
+
+# =============================================
+# EXPLICITLY TRACKED (use `git add -f` if needed):
+# =============================================
+# training_pipeline/models/*.pth       — Trained model weights (via Git LFS)
+# training_pipeline/results/           — Leaderboard, best_config
+# training_pipeline/plots/             — Confusion matrices, learning curves
+# training_pipeline/logs/              — Per-model test metrics JSON
+# training_pipeline/splits/            — Reproducible train/val/test splits
