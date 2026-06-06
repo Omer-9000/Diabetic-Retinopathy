@@ -82,8 +82,7 @@ export default function LoginPage() {
               <label htmlFor="login-username" className="block text-sm font-medium text-gray-300 mb-2">
                 Username
               </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-500" />
+              <div className="input-wrapper">
                 <input
                   id="login-username"
                   type="text"
@@ -91,9 +90,12 @@ export default function LoginPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
                   required
-                  className="input-field pl-11"
+                  className="input-field"
                   autoComplete="username"
                 />
+                <span className="input-icon">
+                  <User className="w-4 h-4" />
+                </span>
               </div>
             </div>
 
@@ -102,8 +104,7 @@ export default function LoginPage() {
               <label htmlFor="login-password" className="block text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-500" />
+              <div className="input-wrapper">
                 <input
                   id="login-password"
                   type={showPassword ? "text" : "password"}
@@ -111,16 +112,19 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
-                  className="input-field pl-11 pr-11"
+                  className="input-field pr-11"
                   autoComplete="current-password"
                 />
+                <span className="input-icon">
+                  <Lock className="w-4 h-4" />
+                </span>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
                   tabIndex={-1}
                 >
-                  {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>

@@ -118,8 +118,13 @@ body::before {
 
 /* ── Animated Gradient Border ─────────────────────────────────────────────── */
 @keyframes gradient-rotate {
-  0% { --gradient-angle: 0deg; }
-  100% { --gradient-angle: 360deg; }
+  0% {
+    --gradient-angle: 0deg;
+  }
+
+  100% {
+    --gradient-angle: 360deg;
+  }
 }
 
 .animated-border {
@@ -133,14 +138,12 @@ body::before {
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(
-    var(--gradient-angle, 0deg),
-    #0ea5e9,
-    #818cf8,
-    #a78bfa,
-    #14b8a6,
-    #0ea5e9
-  );
+  background: linear-gradient(var(--gradient-angle, 0deg),
+      #0ea5e9,
+      #818cf8,
+      #a78bfa,
+      #14b8a6,
+      #0ea5e9);
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -154,8 +157,15 @@ body::before {
 
 /* ── Pulse Dot ────────────────────────────────────────────────────────────── */
 @keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(2); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
 }
 
 .pulse-dot {
@@ -173,17 +183,20 @@ body::before {
 
 /* ── Skeleton Loader ──────────────────────────────────────────────────────── */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(30, 41, 59, 0.5) 25%,
-    rgba(51, 65, 85, 0.5) 50%,
-    rgba(30, 41, 59, 0.5) 75%
-  );
+  background: linear-gradient(90deg,
+      rgba(30, 41, 59, 0.5) 25%,
+      rgba(51, 65, 85, 0.5) 50%,
+      rgba(30, 41, 59, 0.5) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 0.5rem;
@@ -208,15 +221,35 @@ body::before {
 }
 
 /* ── Auth Forms Styling ───────────────────────────────────────────────────── */
+.input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #64748b;
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+  z-index: 1;
+  line-height: 0;
+}
+
 .input-field {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
   background-color: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(51, 65, 85, 0.5);
   border-radius: 0.75rem;
   color: #f8fafc;
   font-size: 0.875rem;
   transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
 }
 
 .input-field:focus {
@@ -230,6 +263,12 @@ body::before {
   color: #64748b;
 }
 
+.input-field:focus~.input-icon,
+.input-field:not(:placeholder-shown)~.input-icon {
+  opacity: 0;
+  transform: translateY(-50%) scale(0.85);
+}
+
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -239,10 +278,11 @@ body::before {
   font-size: 0.875rem;
   font-weight: 500;
   color: #ffffff;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent-indigo) 100%);
+  background: linear-gradient(135deg, #0ea5e9 0%, #818cf8 100%);
   border: none;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
+  text-decoration: none;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -258,4 +298,3 @@ body::before {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
