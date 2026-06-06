@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, LineChart, Brain, Target, ArrowRight } from "lucide-react";
 import ConfusionMatrix from "@/components/ConfusionMatrix";
+import AuthGuard from "@/components/AuthGuard";
+import { API_BASE, authFetch } from "@/lib/auth";
 
-export default function TrainingPage() {
+function TrainingContent() {
   const [plots, setPlots] = useState<any[]>([]);
   const [models, setModels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,8 +15,8 @@ export default function TrainingPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:5000/api/models").then((res) => res.json()),
-      fetch("http://localhost:5000/api/dashboard/plots").then((res) => res.json()),
+      authFetch(`${API_BASE}/api/models`).then((res) => res.json()),
+      authFetch(`${API_BASE}/api/dashboard/plots`).then((res) => res.json()),
     ])
       .then(([modelsData, plotsData]) => {
         setModels(modelsData.models || []);
@@ -136,7 +138,7 @@ export default function TrainingPage() {
                 <div className="relative aspect-[16/7] md:aspect-[21/7] bg-white rounded-xl overflow-hidden border border-gray-800 p-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`http://localhost:5000${learningCurve.url}`}
+                    src={`${API_BASE}${learningCurve.url}`}
                     alt={`${activeModelData.display_name} Learning Curves`}
                     className="w-full h-full object-contain"
                   />
@@ -186,5 +188,13 @@ export default function TrainingPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function TrainingPage() {
+  return (
+    <AuthGuard>
+      <TrainingContent />
+    </AuthGuard>
   );
 }

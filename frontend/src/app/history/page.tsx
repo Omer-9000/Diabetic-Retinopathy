@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, ShieldCheck, AlertTriangle, Trash2, Cpu, FileDown } from "lucide-react";
+import { Clock, ShieldCheck, AlertTriangle, Trash2, Cpu, FileDown, Activity } from "lucide-react";
+import AuthGuard from "@/components/AuthGuard";
+import { API_BASE, authFetch } from "@/lib/auth";
 
 interface HistoryItem {
   id: string;
@@ -23,22 +25,64 @@ interface HistoryItem {
 export default function HistoryPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [filter, setFilter] = useState<string>("all");
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("retina_history");
-    if (saved) {
+    const fetchHistory = async () => {
       try {
-        setHistory(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse history");
+        const response = await authFetch(`${API_BASE}/history`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch history");
+        }
+        const data = await response.json();
+        const mappedHistory: HistoryItem[] = (data.history || []).map((item: any) => {
+          let formattedDate = item.timestamp;
+          try {
+            if (item.timestamp) {
+              formattedDate = new Date(item.timestamp).toLocaleString();
+            }
+          } catch (e) {
+            console.error("Failed to parse date", item.timestamp);
+          }
+
+          return {
+            id: item._id,
+            date: formattedDate,
+            image: item.original_image,
+            grad_cam: item.gradcam_image,
+            confidence: item.confidence_score,
+            is_diabetic: item.is_diabetic,
+            predicted_class_display: item.predicted_class,
+            display_name: item.model_used,
+            model_name: item.model_name,
+            message: item.predicted_class,
+          };
+        });
+        setHistory(mappedHistory);
+      } catch (err: any) {
+        console.error(err);
+        setError("Could not load your history. Please try again.");
+      } finally {
+        setIsLoadingHistory(false);
       }
-    }
+    };
+    fetchHistory();
   }, []);
 
-  const clearHistory = () => {
+  const clearHistory = async () => {
     if (confirm("Are you sure you want to clear all patient history? This cannot be undone.")) {
-      localStorage.removeItem("retina_history");
-      setHistory([]);
+      try {
+        const response = await authFetch(`${API_BASE}/history`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          throw new Error("Failed to clear history");
+        }
+        setHistory([]);
+      } catch (err: any) {
+        alert(err.message || "Failed to clear history");
+      }
     }
   };
   
@@ -76,14 +120,15 @@ export default function HistoryPage() {
   });
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
-            Patient History
-          </h1>
-          <p className="text-gray-400">Past retinal scans and predictions (Stored locally in browser)</p>
-        </div>
+    <AuthGuard>
+      <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
+              Patient History
+            </h1>
+            <p className="text-gray-400">Past retinal scans and predictions (Stored securely in database)</p>
+          </div>
         
         {history.length > 0 && (
           <div className="flex items-center space-x-3">
@@ -108,7 +153,18 @@ export default function HistoryPage() {
         )}
       </div>
 
-      {history.length === 0 ? (
+      {isLoadingHistory ? (
+        <div className="text-center py-32 glass-card flex flex-col items-center justify-center">
+          <Activity className="w-12 h-12 text-sky-400 animate-spin mb-4" />
+          <p className="text-gray-400">Loading history records...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-32 glass-card">
+          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-6" />
+          <h3 className="text-2xl font-medium text-red-400">Error Loading History</h3>
+          <p className="text-gray-500 mt-2 max-w-sm mx-auto">{error}</p>
+        </div>
+      ) : history.length === 0 ? (
         <div className="text-center py-32 glass-card">
           <Clock className="w-16 h-16 text-gray-700 mx-auto mb-6" />
           <h3 className="text-2xl font-medium text-gray-300">No History Found</h3>
@@ -183,6 +239,7 @@ export default function HistoryPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </AuthGuard>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Maximize2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE } from "@/lib/auth";
 
 interface ConfusionMatrixProps {
   modelName: string;
@@ -25,7 +26,7 @@ export default function ConfusionMatrix({ modelName, type, url }: ConfusionMatri
         <div className="relative aspect-square cursor-pointer" onClick={() => setIsExpanded(true)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={`http://localhost:5000${url}`}
+            src={`${API_BASE}${url}`}
             alt={`${modelName} Confusion Matrix`}
             className="w-full h-full object-contain p-2"
           />
@@ -66,7 +67,7 @@ export default function ConfusionMatrix({ modelName, type, url }: ConfusionMatri
               <div className="relative w-full h-[70vh] flex items-center justify-center bg-black/50 rounded-xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`http://localhost:5000${url}`}
+                  src={`${API_BASE}${url}`}
                   alt={`${modelName} Confusion Matrix (Expanded)`}
                   className="max-w-full max-h-full object-contain"
                 />

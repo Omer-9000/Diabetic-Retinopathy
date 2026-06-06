@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, TrendingUp, Cpu, Activity, Clock, Layers, Medal, Zap } from "lucide-react";
 import MetricCard from "@/components/MetricCard";
 import ConfusionMatrix from "@/components/ConfusionMatrix";
+import AuthGuard from "@/components/AuthGuard";
+import { API_BASE, authFetch } from "@/lib/auth";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [data, setData] = useState<any>(null);
   const [plots, setPlots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,8 +19,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:5000/api/dashboard/leaderboard").then(res => res.json()),
-      fetch("http://localhost:5000/api/dashboard/plots").then(res => res.json())
+      authFetch(`${API_BASE}/api/dashboard/leaderboard`).then(res => res.json()),
+      authFetch(`${API_BASE}/api/dashboard/plots`).then(res => res.json())
     ])
     .then(([leaderboardData, plotsData]) => {
       setData(leaderboardData);
@@ -281,7 +283,7 @@ export default function DashboardPage() {
                     <p className="text-sm font-medium text-gray-300 mb-3 text-center uppercase tracking-wider">{plot.model}</p>
                     <div className="relative aspect-[16/7] bg-white rounded-lg overflow-hidden border border-gray-800">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`http://localhost:5000${plot.url}`} alt={`Learning Curves ${plot.model}`} className="w-full h-full object-fill" />
+                      <img src={`${API_BASE}${plot.url}`} alt={`Learning Curves ${plot.model}`} className="w-full h-full object-fill" />
                     </div>
                   </div>
                 ))}
@@ -290,5 +292,13 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <AuthGuard>
+      <DashboardContent />
+    </AuthGuard>
   );
 }

@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import ModelSelector, { ModelData } from "@/components/ModelSelector";
 import ProbabilityChart from "@/components/ProbabilityChart";
 import GradCAMViewer from "@/components/GradCAMViewer";
+import AuthGuard from "@/components/AuthGuard";
+import { API_BASE, authFetch } from "@/lib/auth";
 
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -22,7 +24,7 @@ export default function Home() {
 
   useEffect(() => {
     // Fetch available models from backend
-    fetch("http://localhost:5000/api/models")
+    authFetch(`${API_BASE}/api/models`)
       .then((res) => res.json())
       .then((data) => {
         setModels(data.models);
@@ -85,7 +87,7 @@ export default function Home() {
     const endpoint = isCompareAll ? "predict/compare" : "predict";
 
     try {
-      const response = await fetch(`http://localhost:5000/${endpoint}`, {
+      const response = await authFetch(`${API_BASE}/${endpoint}`, {
         method: "POST",
         body: formData,
       });
@@ -98,32 +100,11 @@ export default function Home() {
       if (data.error) throw new Error(data.error);
       
       setResult(data);
-
-      // Save to history (only for single model right now)
-      if (!isCompareAll) {
-        saveToHistory(data);
-      }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const saveToHistory = (data: any) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(selectedFile!);
-    reader.onloadend = () => {
-      const base64data = reader.result;
-      const historyItem = {
-        id: Date.now().toString(),
-        date: new Date().toLocaleString(),
-        image: base64data,
-        ...data,
-      };
-      const existingHistory = JSON.parse(localStorage.getItem("retina_history") || "[]");
-      localStorage.setItem("retina_history", JSON.stringify([historyItem, ...existingHistory].slice(0, 50)));
-    };
   };
 
   const clearSelection = () => {
@@ -135,7 +116,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <AuthGuard>
+      <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -521,5 +503,6 @@ export default function Home() {
         </div>
       </div>
     </div>
+  </AuthGuard>
   );
 }
