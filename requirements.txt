@@ -23,9 +23,18 @@ opencv-python
 # Explainability
 grad-cam
 
-# Web Backend
-flask
-flask-cors
+# Web Backend (FastAPI)
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Authentication & Security
+python-jose[cryptography]
+passlib[argon2]
+
+# Database
+pymongo
 
 # Utilities
 tqdm
+python-dotenv

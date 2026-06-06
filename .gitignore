@@ -54,6 +54,11 @@ frontend/node_modules/
 .ipynb_checkpoints/
 *.ipynb
 
+# Environment secrets
+.env
+.env.local
+.env.*.local
+
 # Misc
 *.bak
 *.tmp
