@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { Network, Zap, Target, BookOpen, Layers } from "lucide-react";
 
 export default function ResearchPage() {
@@ -132,12 +129,8 @@ export default function ResearchPage() {
         
         <div className="grid grid-cols-1 gap-6">
           {architectures.map((arch, idx) => (
-            <motion.div 
+            <div 
               key={arch.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
               className="glass-card p-6 md:p-8"
             >
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
@@ -184,7 +177,7 @@ export default function ResearchPage() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

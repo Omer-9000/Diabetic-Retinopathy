@@ -1,7 +1,4 @@
-"use client";
-
 import { BrainCircuit, Eye, Layers, Settings2, Activity, Network } from "lucide-react";
-import { motion } from "framer-motion";
 
 export default function HowItWorksPage() {
   const steps = [
@@ -91,12 +88,8 @@ export default function HowItWorksPage() {
       {/* Step by Step Details */}
       <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-800 before:to-transparent">
         {steps.map((step, idx) => (
-          <motion.div 
+          <div 
             key={idx}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ delay: idx * 0.1 }}
             className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active"
           >
             {/* Icon marker */}
@@ -111,7 +104,7 @@ export default function HowItWorksPage() {
                 {step.description}
               </p>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>

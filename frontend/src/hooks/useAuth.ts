@@ -38,9 +38,10 @@ export function useAuth(): AuthState {
       // Don't redirect if already on login or register
       if (pathname !== "/login" && pathname !== "/register") {
         removeToken();
-        router.push("/login");
+        window.location.href = "/login";
+      } else {
+        setIsLoading(false);
       }
-      setIsLoading(false);
       return;
     }
 
@@ -52,7 +53,7 @@ export function useAuth(): AuthState {
         : null
     );
     setIsLoading(false);
-  }, [pathname, router]);
+  }, [pathname]);
 
   return {
     token,

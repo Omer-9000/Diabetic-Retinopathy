@@ -78,7 +78,21 @@ def prepare_data(csv_path, image_dir, splits_dir, random_seed=42):
     and calculates class weights.
     """
     df = pd.read_csv(csv_path)
-    
+
+    # ── Data Cleaning ─────────────────────────────────────────────────────────
+    original_len = len(df)
+    # 1. Remove rows with missing id_code or diagnosis labels
+    df = df.dropna(subset=['id_code', 'diagnosis'])
+    # 2. Remove duplicate images (same id_code)
+    df = df.drop_duplicates(subset=['id_code'])
+    # 3. Validate diagnosis range — must be 0-4 (5-class DR severity scale)
+    df = df[df['diagnosis'].between(0, 4)]
+    # 4. Ensure integer labels
+    df['diagnosis'] = df['diagnosis'].astype(int)
+    print(f"[DATA] Cleaning: {original_len} rows → {len(df)} rows "
+          f"(removed {original_len - len(df)} invalid/duplicate records)")
+    # ─────────────────────────────────────────────────────────────────────────
+
     # Check if splits already exist
     train_path = os.path.join(splits_dir, "train.csv")
     val_path = os.path.join(splits_dir, "val.csv")

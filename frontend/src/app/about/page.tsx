@@ -1,4 +1,3 @@
-"use client";
 
 import { Heart, Shield, Activity, Cpu } from "lucide-react";
 
@@ -62,7 +61,7 @@ export default function AboutPage() {
           </div>
           <div className="bg-gray-900/80 p-4 rounded-xl border border-gray-800 text-center">
             <span className="block text-xs text-gray-500 uppercase tracking-wider mb-2">Backend API</span>
-            <span className="font-bold text-white">Flask (Python)</span>
+            <span className="font-bold text-white">FastAPI (Python)</span>
           </div>
           <div className="bg-gray-900/80 p-4 rounded-xl border border-gray-800 text-center">
             <span className="block text-xs text-gray-500 uppercase tracking-wider mb-2">Frontend Web</span>
