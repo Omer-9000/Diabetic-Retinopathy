@@ -13,7 +13,6 @@
   [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com)
   [![Next.js 16](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
   [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 </div>
 
 <hr style="border: 0; height: 1px; background: linear-gradient(to right, transparent, #e2e8f0, transparent); margin: 30px 0;"/>
@@ -321,10 +320,10 @@ Create a file named `.env` in the root directory. Add the following parameters:
 ```env
 # MongoDB Connection String (Atlas cluster or Local MongoDB instance)
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/?appName=RetinaAI
-DB_NAME=Retina-AI
+DB_NAME=sample
 
 # JWT Security Signature Parameters (Use a long random hex key in production)
-JWT_SECRET_KEY=a3f8b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1
+JWT_SECRET_KEY=sample
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
@@ -427,6 +426,3 @@ python train.py
 
 ## ⚠️ Medical Disclaimer
 This software is a research prototype intended for **educational and research purposes only**. It is not an FDA-approved medical device and must not be used for primary clinical diagnostic decisions. All diagnosis predictions and visual heatmaps must be verified by a licensed healthcare professional or qualified ophthalmologist.
-
-## 📄 License
-Licensed under the [MIT License](file:///c:/Users/Saad/Desktop/Web%20Project/Diabetic-Retinopathy/LICENSE). See the LICENSE file for details.
