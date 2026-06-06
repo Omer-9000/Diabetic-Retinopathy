@@ -1,0 +1,11 @@
+{
+    "best_model": "efficientnet_v2_s",
+    "f1_score": 0.82003925494265,
+    "roc_auc": NaN,
+    "class_names": [
+        "Moderate_NPDR",
+        "No_DR",
+        "PDR",
+        "Severe_NPDR"
+    ]
+}

@@ -51,14 +51,19 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 
 # ── Path setup ───────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PIPELINE_DIR = os.path.join(BASE_DIR, 'training_pipeline')
+PIPELINE_DIR = os.path.join(BASE_DIR, 'Approach_1')
 MODELS_DIR = os.path.join(PIPELINE_DIR, 'models')
+ADVANCED_MODELS_DIR = os.path.join(PIPELINE_DIR, 'advanced', 'models')
+FINETUNE_MODELS_DIR = os.path.join(PIPELINE_DIR, 'finetune', 'models')
 RESULTS_DIR = os.path.join(PIPELINE_DIR, 'results')
+FINETUNE_RESULTS_DIR = os.path.join(PIPELINE_DIR, 'finetune', 'results')
+ADVANCED_RESULTS_DIR = os.path.join(PIPELINE_DIR, 'advanced', 'results')
 LOGS_DIR = os.path.join(PIPELINE_DIR, 'logs')
 PLOTS_DIR = os.path.join(PIPELINE_DIR, 'plots')
-SPLITS_DIR = os.path.join(PIPELINE_DIR, 'splits')
-DATASET_DIR = os.path.join(BASE_DIR, 'Dataset')
-IMAGES_DIR = os.path.join(DATASET_DIR, 'colored_images')
+FINETUNE_PLOTS_DIR = os.path.join(PIPELINE_DIR, 'finetune', 'plots')
+ADVANCED_PLOTS_DIR = os.path.join(PIPELINE_DIR, 'advanced', 'plots')
+DATASET_DIR = os.path.join(PIPELINE_DIR, 'MergedDataset')
+IMAGES_DIR = DATASET_DIR # Adjusted for new structure
 
 sys.path.insert(0, PIPELINE_DIR)
 from models import get_model
@@ -117,36 +122,55 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"[INFO] Using device: {device}")
 
-CLASS_NAMES = ['No_DR', 'Mild', 'Moderate', 'Severe', 'Proliferate_DR']
-CLASS_DISPLAY_NAMES = ['No DR', 'Mild', 'Moderate', 'Severe', 'Proliferative DR']
+CLASS_NAMES = ['Moderate_NPDR', 'No_DR', 'PDR', 'Severe_NPDR']
+CLASS_DISPLAY_NAMES = ['Moderate NPDR', 'No DR', 'PDR', 'Severe NPDR']
 
 SEVERITY_COLORS = {
     'No_DR': '#10b981',
-    'Mild': '#f59e0b',
-    'Moderate': '#f97316',
-    'Severe': '#ef4444',
-    'Proliferate_DR': '#991b1b'
+    'Moderate_NPDR': '#f59e0b',
+    'Severe_NPDR': '#f97316',
+    'PDR': '#ef4444'
 }
 
 # Model metadata — static info about each architecture
+# Maps model_name → phase so we know which leaderboard to look in
+MODEL_PHASE = {
+    'efficientnet_v2_s': 'base',
+    'efficientnet_b3': 'base',
+    'convnext_tiny': 'base',
+    'densenet121': 'base',
+    'swin_t': 'base',
+    'custom_cnn': 'base',
+    'V0_baseline': 'finetune',
+    'V1_deeper_head': 'finetune',
+    'V2_attention_pool': 'finetune',
+    'V3_label_smooth': 'finetune',
+    'V4_full_finetune': 'finetune',
+    'V5_two_stage': 'finetune',
+    'R1_differential_lr': 'advanced',
+    'R2_mixup': 'advanced',
+    'R3_warmup': 'advanced',
+    'R1+R2_combined': 'advanced',
+}
+
 MODEL_METADATA = {
-    'resnet50': {
-        'display_name': 'ResNet-50',
-        'family': 'ResNet',
-        'year': 2015,
-        'origin': 'Microsoft Research',
-        'key_innovation': 'Residual connections / skip connections',
-        'complexity': 'Medium',
-        'flops': '4.1 GFLOPs',
-    },
-    'efficientnet_b0': {
-        'display_name': 'EfficientNet-B0',
-        'family': 'EfficientNet',
-        'year': 2019,
+    'R2_mixup': {
+        'display_name': 'R2 MixUp (Final Best)',
+        'family': 'EfficientNet-V2',
+        'year': 2021,
         'origin': 'Google Brain',
-        'key_innovation': 'Compound scaling (depth × width × resolution)',
-        'complexity': 'Low',
-        'flops': '0.4 GFLOPs',
+        'key_innovation': 'MixUp Augmentation + Fused-MBConv blocks',
+        'complexity': 'Medium',
+        'flops': '2.9 GFLOPs',
+    },
+    'efficientnet_v2_s': {
+        'display_name': 'EfficientNet-V2-S',
+        'family': 'EfficientNet-V2',
+        'year': 2021,
+        'origin': 'Google Brain',
+        'key_innovation': 'Fused-MBConv blocks + progressive training',
+        'complexity': 'Medium',
+        'flops': '2.9 GFLOPs',
     },
     'efficientnet_b3': {
         'display_name': 'EfficientNet-B3',
@@ -157,6 +181,15 @@ MODEL_METADATA = {
         'complexity': 'Medium',
         'flops': '1.8 GFLOPs',
     },
+    'convnext_tiny': {
+        'display_name': 'ConvNeXt-Tiny',
+        'family': 'ConvNeXt',
+        'year': 2022,
+        'origin': 'Meta AI',
+        'key_innovation': '7x7 depthwise convolutions + LayerNorm',
+        'complexity': 'High',
+        'flops': '4.5 GFLOPs',
+    },
     'densenet121': {
         'display_name': 'DenseNet-121',
         'family': 'DenseNet',
@@ -166,23 +199,23 @@ MODEL_METADATA = {
         'complexity': 'Medium',
         'flops': '2.9 GFLOPs',
     },
-    'mobilenet_v3_large': {
-        'display_name': 'MobileNetV3-Large',
-        'family': 'MobileNet',
-        'year': 2019,
-        'origin': 'Google',
-        'key_innovation': 'Inverted residuals, SE blocks, h-swish activation',
-        'complexity': 'Low',
-        'flops': '0.2 GFLOPs',
-    },
-    'vit_b_16': {
-        'display_name': 'ViT-B/16',
+    'swin_t': {
+        'display_name': 'Swin-T',
         'family': 'Vision Transformer',
-        'year': 2020,
-        'origin': 'Google Brain',
-        'key_innovation': 'Pure self-attention, patch embeddings, no convolutions',
+        'year': 2021,
+        'origin': 'Microsoft',
+        'key_innovation': 'Shifted window self-attention',
         'complexity': 'High',
-        'flops': '17.6 GFLOPs',
+        'flops': '4.5 GFLOPs',
+    },
+    'custom_cnn': {
+        'display_name': 'Custom CNN',
+        'family': 'Custom',
+        'year': 2024,
+        'origin': 'From scratch',
+        'key_innovation': '5 conv blocks with Squeeze-Excitation',
+        'complexity': 'Low',
+        'flops': '0.5 GFLOPs',
     }
 }
 
@@ -218,10 +251,16 @@ class ModelCache:
 
     def _load_model(self, model_name):
         """Load a model from disk."""
-        model = get_model(model_name, num_classes=5, pretrained=False)
+        # For R2_mixup, the base architecture is efficientnet_v2_s
+        arch_name = 'efficientnet_v2_s' if model_name == 'R2_mixup' else model_name
+        model = get_model(arch_name, num_classes=4, pretrained=False)
 
-        # Try model-specific weights first, fall back to best_model.pth
+        # Try model-specific weights first
         weight_path = os.path.join(MODELS_DIR, f"{model_name}_best.pth")
+        if not os.path.exists(weight_path):
+            weight_path = os.path.join(ADVANCED_MODELS_DIR, f"{model_name}_best.pth")
+        if not os.path.exists(weight_path):
+            weight_path = os.path.join(FINETUNE_MODELS_DIR, f"{model_name}_best.pth")
         if not os.path.exists(weight_path):
             weight_path = os.path.join(MODELS_DIR, "best_model.pth")
 
@@ -241,44 +280,64 @@ model_cache = ModelCache(max_size=2)
 
 # ── Preprocessing — MUST match training pipeline exactly ─────────────────────
 inference_transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.Resize((512, 512)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                          std=[0.229, 0.224, 0.225])
 ])
 
 # ── Load leaderboard data at startup ─────────────────────────────────────────
-def load_leaderboard():
-    """Load and parse leaderboard.csv into a list of dicts."""
-    leaderboard_path = os.path.join(RESULTS_DIR, 'leaderboard.csv')
-    if not os.path.exists(leaderboard_path):
+def _parse_csv(filepath):
+    """Load a CSV and convert numeric fields to float."""
+    if not os.path.exists(filepath):
         return []
-
-    with open(leaderboard_path, 'r') as f:
+    with open(filepath, 'r') as f:
         reader = csv.DictReader(f)
         rows = list(reader)
-
-    # Convert numeric fields
     for row in rows:
-        for key in ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'ROC-AUC', 'Training Time (s)']:
-            if key in row and row[key]:
-                row[key] = float(row[key])
-        if 'Number of Parameters' in row and row['Number of Parameters']:
-            row['Number of Parameters'] = int(float(row['Number of Parameters']))
-
+        for key in list(row.keys()):
+            if key in ('Model Name', 'Variant', 'Technique', 'Rank'):
+                continue
+            if row[key] is not None and row[key] != '':
+                try:
+                    row[key] = float(row[key])
+                except (ValueError, TypeError):
+                    pass
     return rows
+
+def load_all_leaderboards():
+    """Load all 3 leaderboards and build a unified lookup dict keyed by model name."""
+    combined = {}
+    # Base models — leaderboard.csv uses 'Model Name' column
+    for row in _parse_csv(os.path.join(RESULTS_DIR, 'leaderboard.csv')):
+        name = row.get('Model Name', '')
+        if name:
+            combined[name] = row
+    # Finetune variants — variant_leaderboard.csv uses 'Variant' column
+    for row in _parse_csv(os.path.join(FINETUNE_RESULTS_DIR, 'variant_leaderboard.csv')):
+        name = row.get('Variant', '')
+        if name:
+            combined[name] = row
+    # Advanced techniques — advanced_leaderboard.csv uses 'Technique' column
+    for row in _parse_csv(os.path.join(ADVANCED_RESULTS_DIR, 'advanced_leaderboard.csv')):
+        name = row.get('Technique', '')
+        if name:
+            combined[name] = row
+    return combined
 
 def load_best_model_name():
     """Get the name of the best model from config."""
     config_path = os.path.join(RESULTS_DIR, 'best_config.json')
     try:
         with open(config_path, 'r') as f:
-            return json.load(f).get('best_model', 'efficientnet_b3')
+            return json.load(f).get('best_model', 'R2_mixup')
     except Exception:
-        return 'efficientnet_b3'
+        return 'R2_mixup'
 
-LEADERBOARD_DATA = load_leaderboard()
-BEST_MODEL_NAME = load_best_model_name()
+# Unified lookup: model_name → row dict with all numeric metrics
+ALL_LEADERBOARD = load_all_leaderboards()
+BEST_MODEL_NAME = "R2_mixup" # Force this to be our best advanced model
+print(f"[INFO] Loaded metrics for {len(ALL_LEADERBOARD)} models: {list(ALL_LEADERBOARD.keys())}")
 
 
 def sync_metrics_to_mongodb() -> None:
@@ -410,12 +469,16 @@ def get_target_layers(model, model_name):
         return [model.layer4[-1]]
     elif 'densenet' in model_name:
         return [model.features[-1]]
-    elif 'efficientnet' in model_name:
+    elif 'efficientnet' in model_name or model_name == 'R2_mixup':
         return [model.features[-1]]
     elif 'mobilenet' in model_name:
         return [model.features[-1]]
-    elif 'vit' in model_name:
-        return [model.encoder.layers[-1].ln_1]
+    elif 'convnext' in model_name:
+        return [model.features[-1][-1]]
+    elif 'swin' in model_name:
+        return [model.features[-1][-1].norm2]
+    elif 'custom' in model_name:
+        return [model.features[-2]]
     return None
 
 
@@ -452,7 +515,7 @@ def generate_gradcam(model, model_name, img_tensor, pred_class_idx, original_img
         grayscale_cam = grayscale_cam[0, :]
 
         # Overlay on original image
-        img_resized = np.array(original_img.resize((224, 224))) / 255.0
+        img_resized = np.array(original_img.resize((512, 512))) / 255.0
         visualization = show_cam_on_image(
             img_resized.astype(np.float32),
             grayscale_cam,
@@ -487,7 +550,11 @@ def run_single_inference(model_name, img_tensor, original_img):
 
     # Get model metadata
     metadata = MODEL_METADATA.get(model_name, {})
-    leaderboard_entry = next((r for r in LEADERBOARD_DATA if r.get('Model Name') == model_name), {})
+    lb_entry = ALL_LEADERBOARD.get(model_name, {})
+
+    # Extract accuracy and params from the leaderboard row (column names differ by CSV)
+    model_accuracy = lb_entry.get('Accuracy')
+    model_params = lb_entry.get('Params (M)')
 
     result = {
         'model_name': model_name,
@@ -499,12 +566,12 @@ def run_single_inference(model_name, img_tensor, original_img):
         'is_diabetic': bool(is_diabetic),
         'severity_color': SEVERITY_COLORS.get(severity_label, '#6b7280'),
         'message': f'Detected {CLASS_DISPLAY_NAMES[pred_class_idx]}' if is_diabetic else 'No Diabetic Retinopathy Detected',
-        'probabilities': {CLASS_NAMES[i]: float(probs[i]) for i in range(5)},
-        'probabilities_display': {CLASS_DISPLAY_NAMES[i]: float(probs[i]) for i in range(5)},
+        'probabilities': {CLASS_NAMES[i]: float(probs[i]) for i in range(4)},
+        'probabilities_display': {CLASS_DISPLAY_NAMES[i]: float(probs[i]) for i in range(4)},
         'inference_time_ms': round(inference_time * 1000, 1),
         'grad_cam': grad_cam_b64,
-        'model_params': leaderboard_entry.get('Number of Parameters'),
-        'model_accuracy': leaderboard_entry.get('Accuracy'),
+        'model_params': model_params,
+        'model_accuracy': model_accuracy,
     }
 
     return result
@@ -619,25 +686,27 @@ def list_models():
     """Return all available models with metadata and performance metrics."""
     models = []
     for model_name, meta in MODEL_METADATA.items():
-        # Find leaderboard entry
-        lb_entry = next((r for r in LEADERBOARD_DATA if r.get('Model Name') == model_name), {})
+        # Find leaderboard entry from unified lookup
+        lb = ALL_LEADERBOARD.get(model_name, {})
 
         # Check if weight file exists
-        weight_path = os.path.join(MODELS_DIR, f"{model_name}_best.pth")
-        available = os.path.exists(weight_path)
+        weight_path1 = os.path.join(MODELS_DIR, f"{model_name}_best.pth")
+        weight_path2 = os.path.join(ADVANCED_MODELS_DIR, f"{model_name}_best.pth")
+        weight_path3 = os.path.join(FINETUNE_MODELS_DIR, f"{model_name}_best.pth")
+        available = os.path.exists(weight_path1) or os.path.exists(weight_path2) or os.path.exists(weight_path3)
 
         models.append({
             'name': model_name,
             'available': available,
             'is_best': model_name == BEST_MODEL_NAME,
             **meta,
-            'accuracy': lb_entry.get('Accuracy'),
-            'f1_score': lb_entry.get('F1 Score'),
-            'precision': lb_entry.get('Precision'),
-            'recall': lb_entry.get('Recall'),
-            'roc_auc': lb_entry.get('ROC-AUC'),
-            'training_time_s': lb_entry.get('Training Time (s)'),
-            'num_parameters': lb_entry.get('Number of Parameters'),
+            'accuracy': lb.get('Accuracy'),
+            'f1_score': lb.get('F1 Score'),
+            'precision': lb.get('Precision'),
+            'recall': lb.get('Recall'),
+            'roc_auc': lb.get('ROC-AUC'),
+            'training_time_s': lb.get('Time (min)'),
+            'num_parameters': lb.get('Params (M)'),
         })
 
     return {'models': models, 'best_model': BEST_MODEL_NAME}
@@ -707,8 +776,12 @@ def predict_compare(
         total_start = time.time()
 
         for model_name in MODEL_METADATA.keys():
-            weight_path = os.path.join(MODELS_DIR, f"{model_name}_best.pth")
-            if not os.path.exists(weight_path):
+            # Check multiple directories for the model weight
+            weight_path1 = os.path.join(MODELS_DIR, f"{model_name}_best.pth")
+            weight_path2 = os.path.join(ADVANCED_MODELS_DIR, f"{model_name}_best.pth")
+            weight_path3 = os.path.join(FINETUNE_MODELS_DIR, f"{model_name}_best.pth")
+            
+            if not (os.path.exists(weight_path1) or os.path.exists(weight_path2) or os.path.exists(weight_path3)):
                 continue
 
             try:
@@ -734,7 +807,7 @@ def predict_compare(
         agreement = vote_counts.most_common(1)[0][1] / len(predictions) if predictions else 0
 
         # Average probabilities (ensemble)
-        avg_probs = np.zeros(5)
+        avg_probs = np.zeros(4)
         for r in valid_results:
             for i, cls in enumerate(CLASS_NAMES):
                 avg_probs[i] += r['probabilities'][cls]
@@ -743,7 +816,7 @@ def predict_compare(
         ensemble_pred = int(np.argmax(avg_probs))
 
         # Original image
-        original_resized = np.array(original_img.resize((224, 224)))
+        original_resized = np.array(original_img.resize((512, 512)))
 
         response = {
             'results': results,
@@ -761,8 +834,8 @@ def predict_compare(
                 'predicted_class_display': CLASS_DISPLAY_NAMES[ensemble_pred],
                 'confidence': float(avg_probs[ensemble_pred]),
                 'is_diabetic': ensemble_pred > 0,
-                'probabilities': {CLASS_NAMES[i]: float(avg_probs[i]) for i in range(5)},
-                'probabilities_display': {CLASS_DISPLAY_NAMES[i]: float(avg_probs[i]) for i in range(5)},
+                'probabilities': {CLASS_NAMES[i]: float(avg_probs[i]) for i in range(4)},
+                'probabilities_display': {CLASS_DISPLAY_NAMES[i]: float(avg_probs[i]) for i in range(4)},
                 'severity_color': SEVERITY_COLORS.get(CLASS_NAMES[ensemble_pred], '#6b7280'),
             },
             'original_image': image_to_base64(original_resized),
@@ -856,18 +929,35 @@ def get_leaderboard(current_user: dict = Depends(get_current_user)):
 
     # ── Fallback: read from leaderboard.csv ──────────────────────────────────
     return {
-        "leaderboard": LEADERBOARD_DATA,
-        "best_model": BEST_MODEL_NAME,
-        "class_names": CLASS_NAMES,
-        "class_display_names": CLASS_DISPLAY_NAMES,
+        'leaderboard': ALL_LEADERBOARD,
+        'best_model': BEST_MODEL_NAME,
+        'class_names': CLASS_NAMES,
+        'class_display_names': CLASS_DISPLAY_NAMES,
     }
+
+
+def _find_metrics_file(model_name):
+    """Search all results directories for a model's metrics JSON."""
+    # Different naming conventions: base uses *_test_metrics.json, finetune/advanced use *_metrics.json
+    candidates = [
+        os.path.join(RESULTS_DIR, f"{model_name}_test_metrics.json"),
+        os.path.join(FINETUNE_RESULTS_DIR, f"{model_name}_metrics.json"),
+        os.path.join(ADVANCED_RESULTS_DIR, f"{model_name}_metrics.json"),
+        os.path.join(RESULTS_DIR, f"{model_name}_metrics.json"),
+        os.path.join(FINETUNE_RESULTS_DIR, f"{model_name}_test_metrics.json"),
+        os.path.join(ADVANCED_RESULTS_DIR, f"{model_name}_test_metrics.json"),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    return None
 
 
 @app.get("/api/dashboard/metrics/{model_name}")
 def get_model_metrics(model_name: str, current_user: dict = Depends(get_current_user)):
     """Return detailed test metrics for a specific model."""
-    metrics_path = os.path.join(LOGS_DIR, f"{model_name}_test_metrics.json")
-    if not os.path.exists(metrics_path):
+    metrics_path = _find_metrics_file(model_name)
+    if not metrics_path:
         raise HTTPException(status_code=404, detail=f"Metrics not found for {model_name}")
 
     with open(metrics_path, 'r') as f:
@@ -888,8 +978,8 @@ def get_all_metrics(current_user: dict = Depends(get_current_user)):
     """Return test metrics for all models."""
     all_metrics = {}
     for model_name in MODEL_METADATA.keys():
-        metrics_path = os.path.join(LOGS_DIR, f"{model_name}_test_metrics.json")
-        if os.path.exists(metrics_path):
+        metrics_path = _find_metrics_file(model_name)
+        if metrics_path:
             with open(metrics_path, 'r') as f:
                 metrics = json.load(f)
             metrics['display_name'] = MODEL_METADATA[model_name].get('display_name', model_name)
@@ -898,45 +988,90 @@ def get_all_metrics(current_user: dict = Depends(get_current_user)):
     return all_metrics
 
 
-@app.get("/api/dashboard/plots/{filename}")
-def get_plot(filename: str):
-    """Serve a training plot image file."""
-    plot_path = os.path.join(PLOTS_DIR, filename)
+@app.get("/api/dashboard/plots/{phase}/{filename}")
+def get_plot_phased(phase: str, filename: str):
+    """Serve a training plot image file from a specific phase."""
+    phase_dirs = {
+        'base': PLOTS_DIR,
+        'finetune': FINETUNE_PLOTS_DIR,
+        'advanced': ADVANCED_PLOTS_DIR,
+    }
+    base_dir = phase_dirs.get(phase)
+    if not base_dir:
+        raise HTTPException(status_code=404, detail=f"Unknown phase: {phase}")
+    plot_path = os.path.join(base_dir, filename)
     if not os.path.exists(plot_path):
         raise HTTPException(status_code=404, detail="Plot not found")
     return FileResponse(plot_path, media_type="image/png")
 
 
+# Keep legacy route for backwards compat
+@app.get("/api/dashboard/plots/{filename}")
+def get_plot(filename: str):
+    """Serve a training plot image file (searches all phase dirs)."""
+    for d in (PLOTS_DIR, FINETUNE_PLOTS_DIR, ADVANCED_PLOTS_DIR):
+        plot_path = os.path.join(d, filename)
+        if os.path.exists(plot_path):
+            return FileResponse(plot_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Plot not found")
+
+
+def _classify_plot(filename):
+    """Detect plot type from its filename. Handles both naming conventions."""
+    # Confusion matrix: *_cm.png or *_confusion_matrix.png
+    if '_cm.png' in filename or 'confusion_matrix' in filename:
+        return 'test_confusion_matrix'
+    # Learning curves: *_curves.png or *_learning_curves.png
+    if '_curves.png' in filename or 'learning_curves' in filename:
+        return 'learning_curves'
+    # Per-class bar chart
+    if '_per_class.png' in filename:
+        return 'per_class'
+    # Calibration plot
+    if '_calibration.png' in filename:
+        return 'calibration'
+    if 'distribution' in filename:
+        return 'distribution'
+    if 'comparison' in filename:
+        return 'comparison'
+    return 'other'
+
+
+def _extract_model_name(filename):
+    """Try to match filename prefix to a known model name."""
+    # Check all known model names (longer first to avoid partial matches)
+    all_names = sorted(list(MODEL_METADATA.keys()) + list(MODEL_PHASE.keys()), key=len, reverse=True)
+    for mn in all_names:
+        if filename.startswith(mn):
+            return mn
+    return 'unknown'
+
+
 @app.get("/api/dashboard/plots")
 def list_plots():
-    """List all available plot files."""
-    if not os.path.exists(PLOTS_DIR):
-        return {'plots': []}
-
+    """List all available plot files from all 3 phases."""
     plots = []
-    for f in sorted(os.listdir(PLOTS_DIR)):
-        if f.endswith('.png'):
-            # Parse type from filename
-            plot_type = 'other'
-            model = 'unknown'
-            if 'confusion_matrix' in f:
-                plot_type = 'test_confusion_matrix' if 'test_' in f else 'confusion_matrix'
-            elif 'learning_curves' in f:
-                plot_type = 'learning_curves'
-            elif 'distribution' in f:
-                plot_type = 'distribution'
+    phase_dirs = [
+        ('base', PLOTS_DIR),
+        ('finetune', FINETUNE_PLOTS_DIR),
+        ('advanced', ADVANCED_PLOTS_DIR),
+    ]
 
-            # Extract model name
-            for mn in MODEL_METADATA.keys():
-                if f.startswith(mn):
-                    model = mn
-                    break
+    for phase, plot_dir in phase_dirs:
+        if not os.path.exists(plot_dir):
+            continue
+        for f in sorted(os.listdir(plot_dir)):
+            if not f.endswith('.png'):
+                continue
+            plot_type = _classify_plot(f)
+            model = _extract_model_name(f)
 
             plots.append({
                 'filename': f,
                 'type': plot_type,
                 'model': model,
-                'url': f'/api/dashboard/plots/{f}'
+                'phase': phase,
+                'url': f'/api/dashboard/plots/{phase}/{f}'
             })
 
     return {'plots': plots}
@@ -951,15 +1086,15 @@ def dataset_stats():
     """Return dataset statistics and class distributions."""
     stats = {
         'total_images': 0,
-        'num_classes': 5,
+        'num_classes': 4,
         'class_names': CLASS_NAMES,
         'class_display_names': CLASS_DISPLAY_NAMES,
         'splits': {},
         'class_distribution': {},
-        'source': 'APTOS 2019 Blindness Detection (Kaggle)',
+        'source': 'Private DR Specialist Dataset',
         'image_format': 'PNG',
         'preprocessing': {
-            'resize': '224x224',
+            'resize': '512x512',
             'normalize_mean': [0.485, 0.456, 0.406],
             'normalize_std': [0.229, 0.224, 0.225],
         },
@@ -967,35 +1102,23 @@ def dataset_stats():
             'RandomHorizontalFlip',
             'RandomRotation(15°)',
             'ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)',
-            'RandomResizedCrop(224, scale=(0.8, 1.0))',
+            'RandomResizedCrop(512, scale=(0.8, 1.0))',
+            'MixUp (alpha=0.2)',
         ]
     }
 
-    # Read split files
-    for split in ['train', 'val', 'test']:
-        split_path = os.path.join(SPLITS_DIR, f'{split}.csv')
-        if os.path.exists(split_path):
-            with open(split_path, 'r') as f:
-                reader = csv.DictReader(f)
-                rows = list(reader)
-
-            counts = {cn: 0 for cn in CLASS_NAMES}
-            for row in rows:
-                diagnosis = int(row['diagnosis'])
-                if 0 <= diagnosis < 5:
-                    counts[CLASS_NAMES[diagnosis]] += 1
-
-            stats['splits'][split] = {
-                'total': len(rows),
-                'distribution': counts,
-            }
-            stats['total_images'] += len(rows)
-
-    # Overall distribution
+    # Count images in directories directly since we don't have split CSVs
     total_dist = {cn: 0 for cn in CLASS_NAMES}
-    for split_data in stats['splits'].values():
-        for cn, count in split_data['distribution'].items():
-            total_dist[cn] += count
+    if os.path.exists(IMAGES_DIR):
+        for class_name in CLASS_NAMES:
+            class_dir = os.path.join(IMAGES_DIR, class_name)
+            if os.path.exists(class_dir):
+                count = len([f for f in os.listdir(class_dir) if f.endswith(('.png', '.jpg', '.jpeg'))])
+                total_dist[class_name] = count
+                stats['total_images'] += count
+            else:
+                total_dist[class_name] = 0
+
     stats['class_distribution'] = total_dist
 
     return stats

@@ -13,7 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "RetinaAI — Diabetic Retinopathy Detection Platform",
   description:
-    "Research-grade deep learning platform for automated diabetic retinopathy detection and severity classification using 6 state-of-the-art neural network architectures with Grad-CAM explainability.",
+    "Research-grade deep learning platform for automated diabetic retinopathy detection and severity classification using a 10-step DIP pipeline and 4-class architecture with Grad-CAM explainability.",
   keywords: [
     "diabetic retinopathy",
     "deep learning",

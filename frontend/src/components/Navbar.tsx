@@ -11,7 +11,7 @@ const protectedLinks = [
   { href: "/", label: "Predict" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/training", label: "Training" },
-  { href: "/research", label: "Research" },
+  { href: "/research", label: "Architecture" },
   { href: "/dataset", label: "Dataset" },
   { href: "/how-it-works", label: "How It Works" },
   { href: "/history", label: "History" },

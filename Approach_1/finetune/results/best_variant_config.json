@@ -1,0 +1,11 @@
+{
+    "best_variant": "V4_full_finetune",
+    "f1_score": 0.7902760369421014,
+    "roc_auc": 0.9482613407022484,
+    "class_names": [
+        "Moderate_NPDR",
+        "No_DR",
+        "PDR",
+        "Severe_NPDR"
+    ]
+}

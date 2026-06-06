@@ -22,6 +22,8 @@ ENV/
 
 # Dataset (large image files — not tracked)
 Dataset/
+New Dataset/
+Approach_1/MergedDataset/
 
 # IDE & Editors
 .vscode/
