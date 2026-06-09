@@ -347,21 +347,40 @@ def sync_metrics_to_mongodb() -> None:
     This satisfies the rubric requirement that evaluation metrics are
     persisted to the database and exposed via a secure API endpoint.
     """
-    if not LEADERBOARD_DATA:
+    if not ALL_LEADERBOARD:
         print("[INFO] No leaderboard data found — skipping MongoDB metrics sync.")
         return
     try:
-        for row in LEADERBOARD_DATA:
-            model_name = row.get("Model Name")
+        for model_name, row in ALL_LEADERBOARD.items():
             if not model_name:
                 continue
 
             # Load per-class detailed metrics if available
             detailed: dict = {}
-            metrics_path = os.path.join(LOGS_DIR, f"{model_name}_test_metrics.json")
-            if os.path.exists(metrics_path):
+            candidates = [
+                os.path.join(RESULTS_DIR, f"{model_name}_test_metrics.json"),
+                os.path.join(FINETUNE_RESULTS_DIR, f"{model_name}_metrics.json"),
+                os.path.join(ADVANCED_RESULTS_DIR, f"{model_name}_metrics.json"),
+                os.path.join(RESULTS_DIR, f"{model_name}_metrics.json"),
+                os.path.join(FINETUNE_RESULTS_DIR, f"{model_name}_test_metrics.json"),
+                os.path.join(ADVANCED_RESULTS_DIR, f"{model_name}_test_metrics.json"),
+            ]
+            metrics_path = next((p for p in candidates if os.path.exists(p)), None)
+            if metrics_path:
                 with open(metrics_path, "r") as f:
                     detailed = json.load(f)
+
+            def _float_or_none(v):
+                try: return float(v)
+                except (ValueError, TypeError): return None
+
+            t_min = _float_or_none(row.get("Time (min)"))
+            t_sec = _float_or_none(row.get("Training Time (s)"))
+            training_time = t_min * 60 if t_min is not None else t_sec
+
+            p_m = _float_or_none(row.get("Params (M)"))
+            p_n = _float_or_none(row.get("Number of Parameters"))
+            num_params = int(p_m * 1000000) if p_m is not None else (int(p_n) if p_n is not None else None)
 
             doc = {
                 "model_name": model_name,
@@ -371,8 +390,8 @@ def sync_metrics_to_mongodb() -> None:
                 "recall":           row.get("Recall"),
                 "f1_score":         row.get("F1 Score"),
                 "roc_auc":          row.get("ROC-AUC"),
-                "training_time_s":  row.get("Training Time (s)"),
-                "num_parameters":   row.get("Number of Parameters"),
+                "training_time_s":  training_time,
+                "num_parameters":   num_params,
                 "is_best":          model_name == BEST_MODEL_NAME,
                 "detailed_metrics": detailed,
                 "synced_at":        datetime.now(timezone.utc),
@@ -383,7 +402,7 @@ def sync_metrics_to_mongodb() -> None:
                 upsert=True,
             )
 
-        print(f"[INFO] Synced {len(LEADERBOARD_DATA)} model metrics → MongoDB (model_metrics)")
+        print(f"[INFO] Synced {len(ALL_LEADERBOARD)} model metrics → MongoDB (model_metrics)")
     except Exception as exc:
         print(f"[WARN] MongoDB metrics sync failed: {exc}")
 
